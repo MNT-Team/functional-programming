@@ -1,0 +1,143 @@
+import React from 'react';
+
+export default class JZForm extends React.Component {
+	// a费率: feeRate			          0
+	// b估算净值: preNet		        1.0440
+	// c购买金额: buyAmount		      500.00
+	// d预持有份额: preHold		      d = c*(1-a)/b = 478.92
+
+	// e已投入金额: money		        210.00
+	// f已持有份额: hold		        188.42	
+	// g预持有净值: preHoldNet		  g = (e+c)/(f+d) = 710.00/667.34 = 1.0639
+
+	// h预持有金额: preHoldAmount 	(d+f)*b = (478.92+188.42)*1.0440=706.0989
+	// i预收益: preBenefit			    h-(c+e) = 706.0989-710 = -3.9010
+	// j预收益率: preBenefitRate		i / (c+e) = -0.54%
+
+	constructor(props) {
+		super(props);
+		this.state = {
+			feeRate: 0.0,
+			preNet: 1.0,
+			buyAmount: 100,
+			money: 0.0,
+			hold: 0.0,
+			preHold: 0.0,
+			preHoldNet: 0.0,
+			preHoldAmount: 0.0,
+			preBenefit: 0.0,
+			preBenefitRate: 0.0
+		};
+
+		this.changeRate = this.changeRate.bind(this);
+		this.changePreNet = this.changePreNet.bind(this);
+		this.changeBuyAmount = this.changeBuyAmount.bind(this);
+		this.changeMoney = this.changeMoney.bind(this);
+		this.changeHold = this.changeHold.bind(this);
+		this.calc = this.calc.bind(this);
+
+		this.renderPreHold = this.renderPreHold.bind(this);
+		this.calcPreHoldNet = this.calcPreHoldNet.bind(this);
+		this.calcPreHoldAmount = this.calcPreHoldAmount.bind(this);
+		this.calcPreBenefit = this.calcPreBenefit.bind(this);
+	}
+
+
+	changeRate(e) {
+		let rate = Number.parseFloat(e.target.value);
+		this.setState({
+			feeRate: (isNaN(rate) ? 0 : rate)
+		});
+		// this.calc();
+	}
+	changePreNet(e) {
+		let netvalue = Number.parseFloat(e.target.value);
+		this.setState({
+			preNet: (isNaN(netvalue) ? '' : netvalue)
+		});
+		// this.calc();
+	}
+	changeBuyAmount(e) {
+		let amount = Number.parseInt(e.target.value);
+
+		this.setState({
+			buyAmount: (isNaN(amount) ? '' : amount)
+		});
+		// this.calc();
+	}
+	changeMoney(e) {
+		this.setState({
+			money: e.target.value
+		});
+		// this.calc();
+	}
+	changeHold(e) {
+		this.setState({
+			hold: e.target.value
+		});
+		// this.calc();
+	}
+
+	calc() {
+		this.renderPreHold();
+		this.calcPreHoldNet();
+		this.calcPreHoldAmount();
+		this.calcPreBenefit();
+		this.calcPreBenefitRate();
+	}
+
+	computePreHold(state) {
+		let value = state.buyAmount * (1 - state.feeRate) / state.preNet;
+		return isNaN(value) ? '' : value.toFixed(2);
+	}
+
+
+	renderPreHold() {
+		this.setState(prevState => ({
+			preHold: this.computePreHold(prevState)
+		}))
+	}
+	calcPreHoldNet() {
+
+		this.setState(prevState => ({
+			preHoldNet: ((prevState.money * 1 + prevState.buyAmount * 1) / (prevState.hold * 1 + prevState.preHold * 1)).toFixed(4)
+		}))
+	}
+	calcPreHoldAmount() {
+		return this.setState(prevState => ({
+			preHoldAmount: ((prevState.preHold * 1 + prevState.hold * 1) * prevState.preNet * 1).toFixed(2)
+		}))
+
+	}
+	calcPreBenefit() {
+		this.setState(prevState => ({
+			preBenefit: (prevState.preHoldAmount - prevState.buyAmount - prevState.money).toFixed(2)
+		}))
+	}
+	calcPreBenefitRate() {
+		this.setState(prevState => ({
+			preBenefitRate: (prevState.preBenefit * 1 / (prevState.buyAmount * 1 + prevState.money * 1)).toFixed(2)
+		}))
+	}
+
+	render() {
+		return (
+			<form>
+        <p>
+        费率 <input value ={this.state.feeRate} onChange={this.changeRate} /></p>                    
+        <p>
+          估算净值 <input value={this.state.preNet} onChange={this.changePreNet} /> 预持有净值 <input value={this.state.preHoldNet} readOnly/>
+        </p>
+        <p>购买金额 <input value={this.state.buyAmount} onChange={this.changeBuyAmount} /> </p>
+        
+        <p>已投入金额 <input value={this.state.money} onChange={this.changeMoney} /> 预持有金额 <input value={this.state.preHoldAmount} readOnly/></p>
+        <p>已持有份额 <input value={this.state.hold} onChange={this.changeHold}  /> 预持有份额 <input value={this.state.preHold} readOnly/></p>          
+        
+        <p>预计收益 <input  value={this.state.preBenefit} readOnly/></p>
+        <p>预计收益率 <input value={this.state.preBenefitRate} readOnly /></p>
+
+        <button type="button" onClick={this.calc}>Calc</button>
+      </form>
+		)
+	}
+}
